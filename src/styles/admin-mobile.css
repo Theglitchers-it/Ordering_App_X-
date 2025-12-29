@@ -1,0 +1,184 @@
+/* Admin Mobile Optimizations */
+
+/* Riduci padding e spacing su mobile */
+@media (max-width: 640px) {
+  /* Spacing globale */
+  .admin-container {
+    @apply space-y-3;
+  }
+
+  /* KPI Cards */
+  .kpi-card {
+    @apply p-4;
+  }
+
+  .kpi-card h3 {
+    @apply text-2xl;
+  }
+
+  /* Tabelle */
+  .table-wrapper {
+    @apply overflow-x-auto -mx-3;
+  }
+
+  .table-wrapper table {
+    @apply min-w-full;
+  }
+
+  /* Forms */
+  .form-grid {
+    @apply grid-cols-1 gap-3;
+  }
+
+  /* Modali */
+  .modal-content {
+    @apply p-4 max-h-[85vh] overflow-y-auto;
+  }
+
+  /* Headers */
+  .page-header {
+    @apply space-y-3;
+  }
+
+  .page-header h1 {
+    @apply text-2xl;
+  }
+
+  /* Buttons */
+  .btn-group {
+    @apply flex-col space-y-2 space-x-0;
+  }
+
+  .btn {
+    @apply w-full justify-center;
+  }
+
+  /* Stats grids */
+  .stats-grid {
+    @apply grid-cols-2 gap-3;
+  }
+
+  /* Cards */
+  .card {
+    @apply p-4;
+  }
+
+  /* Filters */
+  .filters-row {
+    @apply flex-col space-y-2;
+  }
+
+  .filter-select {
+    @apply w-full;
+  }
+}
+
+/* Tablet optimizations */
+@media (min-width: 641px) and (max-width: 1023px) {
+  .stats-grid {
+    @apply grid-cols-2;
+  }
+
+  .form-grid {
+    @apply grid-cols-2;
+  }
+}
+
+/* Ottimizzazioni touch */
+@media (hover: none) and (pointer: coarse) {
+  /* Aumenta area touch per pulsanti */
+  .btn,
+  button {
+    @apply min-h-[44px];
+  }
+
+  /* Migliora spacing per elementi interattivi */
+  .interactive-list > * {
+    @apply py-3;
+  }
+}
+
+/* Scroll horizontal con indicators */
+.scroll-container {
+  @apply overflow-x-auto pb-2;
+  scrollbar-width: thin;
+}
+
+.scroll-container::-webkit-scrollbar {
+  height: 4px;
+}
+
+.scroll-container::-webkit-scrollbar-track {
+  @apply bg-gray-100 rounded;
+}
+
+.scroll-container::-webkit-scrollbar-thumb {
+  @apply bg-orange-500 rounded;
+}
+
+/* Mobile-first cards */
+.mobile-card {
+  @apply bg-white border border-gray-200 rounded-lg p-4 shadow-sm;
+}
+
+.mobile-card-header {
+  @apply flex items-center justify-between mb-3 pb-3 border-b border-gray-100;
+}
+
+.mobile-card-body {
+  @apply space-y-2;
+}
+
+.mobile-card-row {
+  @apply flex justify-between items-center;
+}
+
+.mobile-card-label {
+  @apply text-xs font-medium text-gray-500 uppercase;
+}
+
+.mobile-card-value {
+  @apply text-sm font-semibold text-gray-900;
+}
+
+/* Status badges mobile */
+.status-badge {
+  @apply px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap;
+}
+
+/* Responsive images */
+.responsive-img {
+  @apply w-full h-auto object-cover;
+}
+
+/* Mobile navigation */
+.mobile-nav {
+  @apply fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 lg:hidden;
+}
+
+.mobile-nav-item {
+  @apply flex-1 flex flex-col items-center justify-center py-2 text-xs;
+}
+
+/* Floating action button */
+.fab {
+  @apply fixed bottom-20 right-4 w-14 h-14 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full shadow-lg flex items-center justify-center text-white z-30 lg:hidden;
+}
+
+/* Toast notifications mobile */
+.toast-mobile {
+  @apply fixed bottom-20 left-4 right-4 z-50 lg:bottom-4;
+}
+
+/* Skeleton loaders mobile */
+.skeleton {
+  @apply animate-pulse bg-gray-200 rounded;
+}
+
+.skeleton-text {
+  @apply h-4 bg-gray-200 rounded w-3/4 mb-2;
+}
+
+.skeleton-card {
+  @apply h-24 bg-gray-200 rounded mb-3;
+}
