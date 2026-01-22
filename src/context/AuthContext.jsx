@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { ROLES, hasPermission, canAccessAdmin, logAction } from '../utils/rbac'
+import * as authService from '../api/authService'
+import { initializeSocket, disconnectSocket, reconnectWithToken } from '../api/socketClient'
 
 const AuthContext = createContext()
 
@@ -30,62 +32,105 @@ export function AuthProvider({ children }) {
   const isAdmin = canAccessAdmin(currentRole)
 
   // Login admin
-  const loginAdmin = (credentials) => {
-    const { email, password, role = ROLES.SUPER_ADMIN } = credentials
+  const loginAdmin = async (credentials) => {
+    const { email, password } = credentials
 
-    // Validazione credenziali (in produzione fare chiamata API)
-    const validCredentials = {
-      'admin': { password: 'admin123', role: ROLES.SUPER_ADMIN },
-      'admin@app.com': { password: 'admin123', role: ROLES.SUPER_ADMIN },
-      'ops@app.com': { password: 'ops123', role: ROLES.ADMIN_OPS },
-      'merchant@app.com': { password: 'merchant123', role: ROLES.MERCHANT_ADMIN },
-      'support@app.com': { password: 'support123', role: ROLES.SUPPORT_AGENT },
-      'finance@app.com': { password: 'finance123', role: ROLES.FINANCE },
-      'logistics@app.com': { password: 'logistics123', role: ROLES.LOGISTICS }
+    try {
+      // Call real API
+      const result = await authService.login(email, password)
+
+      if (!result.success) {
+        return { success: false, message: result.message || 'Credenziali non valide' }
+      }
+
+      const { user } = result
+
+      // Check if user has admin role
+      const isAdminRole = canAccessAdmin(user.role)
+      if (!isAdminRole) {
+        authService.clearTokens()
+        return { success: false, message: 'Accesso negato: privilegi amministratore richiesti' }
+      }
+
+      const authData = {
+        email: user.email,
+        role: user.role,
+        name: getRoleName(user.role),
+        loginTime: new Date().toISOString(),
+        userId: user.uuid
+      }
+
+      localStorage.setItem('adminAuth', JSON.stringify(authData))
+      setAdminAuth(authData)
+
+      // Initialize WebSocket connection
+      reconnectWithToken()
+
+      logAction(email, user.role, 'login', 'auth', { success: true })
+
+      return { success: true, role: user.role }
+    } catch (error) {
+      console.error('[AuthContext] Login error:', error)
+      return { success: false, message: 'Errore durante il login' }
     }
-
-    const user = validCredentials[email]
-    if (!user || user.password !== password) {
-      return { success: false, message: 'Credenziali non valide' }
-    }
-
-    const authData = {
-      email,
-      role: user.role,
-      name: getRoleName(user.role),
-      loginTime: new Date().toISOString()
-    }
-
-    localStorage.setItem('adminAuth', JSON.stringify(authData))
-    setAdminAuth(authData)
-
-    logAction(email, user.role, 'login', 'auth', { success: true })
-
-    return { success: true, role: user.role }
   }
 
   // Logout admin
-  const logoutAdmin = () => {
+  const logoutAdmin = async () => {
     if (adminAuth) {
       logAction(adminAuth.email, adminAuth.role, 'logout', 'auth')
     }
+
+    // Call API logout
+    await authService.logout()
+
+    // Disconnect WebSocket
+    disconnectSocket()
+
     localStorage.removeItem('adminAuth')
     setAdminAuth(null)
   }
 
   // Login user
-  const loginUser = (userData) => {
-    const userWithRole = { ...userData, role: ROLES.USER }
-    localStorage.setItem('user', JSON.stringify(userWithRole))
-    setUserAuth(userWithRole)
-    logAction(userData.email, ROLES.USER, 'login', 'auth', { success: true })
+  const loginUser = async (email, password) => {
+    try {
+      // Call real API
+      const result = await authService.login(email, password)
+
+      if (!result.success) {
+        return { success: false, message: result.message || 'Credenziali non valide' }
+      }
+
+      const { user } = result
+
+      const userWithRole = { ...user, role: user.role || ROLES.USER }
+      localStorage.setItem('user', JSON.stringify(userWithRole))
+      setUserAuth(userWithRole)
+
+      // Initialize WebSocket connection
+      reconnectWithToken()
+
+      logAction(user.email, user.role, 'login', 'auth', { success: true })
+
+      return { success: true, user: userWithRole }
+    } catch (error) {
+      console.error('[AuthContext] Login error:', error)
+      return { success: false, message: 'Errore durante il login' }
+    }
   }
 
   // Logout user
-  const logoutUser = () => {
+  const logoutUser = async () => {
     if (userAuth) {
-      logAction(userAuth.email, ROLES.USER, 'logout', 'auth')
+      logAction(userAuth.email, userAuth.role, 'logout', 'auth')
     }
+
+    // Call API logout
+    await authService.logout()
+
+    // Disconnect WebSocket
+    disconnectSocket()
+
     localStorage.removeItem('user')
     localStorage.removeItem('cart')
     localStorage.removeItem('favorites')
