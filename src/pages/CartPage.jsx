@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Trash2, Plus, Minus, ShoppingBag, Tag, X, CheckCircle, Award } from 'lucide-react'
+import { ArrowLeft, Trash2, Plus, Minus, ShoppingBag, Tag, X, CheckCircle, Award, Loader2 } from 'lucide-react'
 import { useCart } from '../context/CartContext'
 import { useCoupons } from '../context/CouponsContext'
 import { useLoyalty } from '../context/LoyaltyContext'
@@ -21,14 +21,24 @@ function CartPage() {
 
   const [couponCode, setCouponCode] = useState('')
   const [couponMessage, setCouponMessage] = useState(null)
+  const [applying, setApplying] = useState(false)
 
   const subtotal = getCartTotal()
   const loyaltyDiscount = (subtotal * getDiscount()) / 100
   const couponDiscount = calculateDiscount(subtotal)
   const total = subtotal - loyaltyDiscount - couponDiscount
 
-  const handleApplyCoupon = () => {
-    const result = applyCoupon(couponCode, subtotal, tier)
+  const handleApplyCoupon = async () => {
+    setApplying(true)
+    // Pass merchantId and userId for proper validation
+    const result = await applyCoupon(
+      couponCode,
+      subtotal,
+      tier,
+      currentMerchant?.id || null,
+      user?.id || null
+    )
+    setApplying(false)
     setCouponMessage(result)
     if (result.success) {
       setCouponCode('')
@@ -268,10 +278,17 @@ function CartPage() {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={handleApplyCoupon}
-                    disabled={!couponCode}
-                    className="px-6 py-3 bg-gray-900 text-white rounded-xl font-medium text-sm hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={!couponCode || applying}
+                    className="px-6 py-3 bg-gray-900 text-white rounded-xl font-medium text-sm hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                   >
-                    Applica
+                    {applying ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Verifica...</span>
+                      </>
+                    ) : (
+                      <span>Applica</span>
+                    )}
                   </motion.button>
                 </div>
               )}

@@ -3,20 +3,31 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Ticket, Search, Plus, Edit, Trash2, Eye, X, Percent, DollarSign,
-  Calendar, Tag, Copy, TrendingUp, Users, ShoppingBag
+  Calendar, Tag, Copy, TrendingUp, Users, ShoppingBag, Loader2
 } from 'lucide-react'
 import { useRBAC, PERMISSIONS } from '../../context/RBACContext'
+import { useCoupons } from '../../context/CouponsContext'
 import AdminLayoutNew from '../../components/admin/AdminLayoutNew'
 
 function AdminCouponsPageNew() {
   const navigate = useNavigate()
   const { hasPermission } = useRBAC()
+  const {
+    coupons: contextCoupons,
+    loading,
+    createCoupon: createCouponAPI,
+    updateCoupon: updateCouponAPI,
+    deleteCoupon: deleteCouponAPI,
+    toggleCouponStatus
+  } = useCoupons()
+
   const [coupons, setCoupons] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
   const [typeFilter, setTypeFilter] = useState('all')
   const [selectedCoupon, setSelectedCoupon] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [modalMode, setModalMode] = useState('view')
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     const auth = localStorage.getItem('adminAuth')
@@ -25,77 +36,33 @@ function AdminCouponsPageNew() {
     if (!hasPermission(PERMISSIONS.VIEW_COUPONS)) {
       navigate('/admin/dashboard')
     }
-
-    loadCoupons()
   }, [navigate, hasPermission])
 
-  const loadCoupons = () => {
-    const saved = localStorage.getItem('coupons')
-    if (saved) {
-      setCoupons(JSON.parse(saved))
-    } else {
-      const demoCoupons = [
-        {
-          id: 1,
-          code: 'WELCOME20',
-          type: 'percent',
-          value: 20,
-          minOrder: 15,
-          maxDiscount: 10,
-          usageLimit: 100,
-          usageCount: 45,
-          stackable: false,
-          active: true,
-          validFrom: new Date('2024-01-01').toISOString(),
-          validUntil: new Date('2024-12-31').toISOString(),
-          applicableCategories: ['all'],
-          description: 'Sconto 20% per nuovi clienti',
-          createdAt: new Date('2024-01-01').toISOString()
-        },
-        {
-          id: 2,
-          code: 'PIZZA10',
-          type: 'fixed',
-          value: 10,
-          minOrder: 25,
-          maxDiscount: null,
-          usageLimit: 500,
-          usageCount: 235,
-          stackable: true,
-          active: true,
-          validFrom: new Date('2024-01-01').toISOString(),
-          validUntil: new Date('2024-06-30').toISOString(),
-          applicableCategories: ['Pizza'],
-          description: '10€ di sconto sulle pizze',
-          createdAt: new Date('2024-01-15').toISOString()
-        },
-        {
-          id: 3,
-          code: 'SUMMER50',
-          type: 'percent',
-          value: 50,
-          minOrder: 50,
-          maxDiscount: 25,
-          usageLimit: 50,
-          usageCount: 50,
-          stackable: false,
-          active: false,
-          validFrom: new Date('2024-06-01').toISOString(),
-          validUntil: new Date('2024-08-31').toISOString(),
-          applicableCategories: ['all'],
-          description: 'Promo estiva -50%',
-          createdAt: new Date('2024-05-01').toISOString()
-        }
-      ]
-      setCoupons(demoCoupons)
-      localStorage.setItem('coupons', JSON.stringify(demoCoupons))
+  // Sync coupons from context
+  useEffect(() => {
+    if (contextCoupons && contextCoupons.length > 0) {
+      // Normalize coupon data for display
+      const normalizedCoupons = contextCoupons.map(c => ({
+        id: c.id,
+        code: c.code,
+        type: c.discount_type === 'percentage' ? 'percent' : 'fixed',
+        value: parseFloat(c.discount_value || c.value || 0),
+        minOrder: parseFloat(c.min_order_amount || c.minOrder || 0),
+        maxDiscount: c.max_discount_amount || c.maxDiscount || null,
+        usageLimit: c.max_uses || c.usageLimit || 100,
+        usageCount: c.times_used || c.usageCount || 0,
+        stackable: c.stackable || false,
+        active: c.is_active !== undefined ? c.is_active : c.active,
+        validFrom: c.valid_from || c.validFrom,
+        validUntil: c.valid_until || c.validUntil,
+        applicableCategories: c.applicable_categories || c.applicableCategories || ['all'],
+        description: c.description || '',
+        title: c.title || '',
+        createdAt: c.createdAt || c.created_at
+      }))
+      setCoupons(normalizedCoupons)
     }
-  }
-
-  const saveCoupons = (updatedCoupons) => {
-    setCoupons(updatedCoupons)
-    localStorage.setItem('coupons', JSON.stringify(updatedCoupons))
-  }
+  }, [contextCoupons])
 
   const filteredCoupons = coupons.filter(coupon => {
     const matchesSearch = coupon.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -144,44 +111,108 @@ function AdminCouponsPageNew() {
     setShowModal(true)
   }
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (!hasPermission(PERMISSIONS.DELETE_COUPONS)) {
       alert('Non hai il permesso di eliminare coupon')
       return
     }
     if (confirm('Sei sicuro di voler eliminare questo coupon?')) {
-      const updated = coupons.filter(c => c.id !== id)
-      saveCoupons(updated)
-    }
-  }
+      setSaving(true)
+      const result = await deleteCouponAPI(id)
+      setSaving(false)
 
-  const handleSave = () => {
-    if (modalMode === 'create') {
-      const newCoupon = {
-        ...selectedCoupon,
-        id: Math.max(0, ...coupons.map(c => c.id)) + 1,
-        usageCount: 0,
-        createdAt: new Date().toISOString()
+      if (result.success) {
+        if (result.deactivated) {
+          // Update local state to show as deactivated
+          setCoupons(prev => prev.map(c =>
+            c.id === id ? { ...c, active: false } : c
+          ))
+          alert('Il coupon è stato disattivato (ha già degli utilizzi)')
+        } else {
+          setCoupons(prev => prev.filter(c => c.id !== id))
+        }
+      } else {
+        alert(result.message || 'Errore durante l\'eliminazione')
       }
-      saveCoupons([...coupons, newCoupon])
-    } else if (modalMode === 'edit') {
-      const updated = coupons.map(c =>
-        c.id === selectedCoupon.id ? selectedCoupon : c
-      )
-      saveCoupons(updated)
     }
-    setShowModal(false)
   }
 
-  const handleToggleActive = (id) => {
+  const handleSave = async () => {
+    setSaving(true)
+
+    // Prepare data for API
+    const couponData = {
+      code: selectedCoupon.code,
+      title: selectedCoupon.title || selectedCoupon.description,
+      description: selectedCoupon.description,
+      discount_type: selectedCoupon.type === 'percent' ? 'percentage' : 'fixed_amount',
+      discount_value: selectedCoupon.value,
+      max_discount_amount: selectedCoupon.maxDiscount,
+      min_order_amount: selectedCoupon.minOrder || 0,
+      max_uses: selectedCoupon.usageLimit,
+      valid_from: selectedCoupon.validFrom,
+      valid_until: selectedCoupon.validUntil,
+      applicable_categories: selectedCoupon.applicableCategories,
+      is_active: selectedCoupon.active !== false
+    }
+
+    let result
+    if (modalMode === 'create') {
+      result = await createCouponAPI(couponData)
+      if (result.success) {
+        // Add normalized coupon to local state
+        const newCoupon = {
+          id: result.coupon.id,
+          code: result.coupon.code,
+          type: selectedCoupon.type,
+          value: selectedCoupon.value,
+          minOrder: selectedCoupon.minOrder || 0,
+          maxDiscount: selectedCoupon.maxDiscount,
+          usageLimit: selectedCoupon.usageLimit,
+          usageCount: 0,
+          stackable: selectedCoupon.stackable || false,
+          active: true,
+          validFrom: selectedCoupon.validFrom,
+          validUntil: selectedCoupon.validUntil,
+          applicableCategories: selectedCoupon.applicableCategories,
+          description: selectedCoupon.description,
+          createdAt: new Date().toISOString()
+        }
+        setCoupons(prev => [newCoupon, ...prev])
+      }
+    } else if (modalMode === 'edit') {
+      result = await updateCouponAPI(selectedCoupon.id, couponData)
+      if (result.success) {
+        setCoupons(prev => prev.map(c =>
+          c.id === selectedCoupon.id ? selectedCoupon : c
+        ))
+      }
+    }
+
+    setSaving(false)
+
+    if (result.success) {
+      setShowModal(false)
+    } else {
+      alert(result.message || 'Errore durante il salvataggio')
+    }
+  }
+
+  const handleToggleActive = async (id) => {
     if (!hasPermission(PERMISSIONS.UPDATE_COUPONS)) {
       alert('Non hai il permesso di modificare coupon')
       return
     }
-    const updated = coupons.map(c =>
-      c.id === id ? { ...c, active: !c.active } : c
-    )
-    saveCoupons(updated)
+
+    const result = await toggleCouponStatus(id)
+
+    if (result.success) {
+      setCoupons(prev => prev.map(c =>
+        c.id === id ? { ...c, active: !c.active } : c
+      ))
+    } else {
+      alert(result.message || 'Errore durante l\'aggiornamento')
+    }
   }
 
   const handleCopyCode = (code) => {
@@ -595,15 +626,24 @@ function AdminCouponsPageNew() {
                     <div className="flex space-x-4 pt-4">
                       <button
                         onClick={() => setShowModal(false)}
-                        className="flex-1 px-4 py-2 border-2 border-gray-200 rounded-lg hover:bg-gray-50"
+                        disabled={saving}
+                        className="flex-1 px-4 py-2 border-2 border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
                       >
                         Annulla
                       </button>
                       <button
                         onClick={handleSave}
-                        className="flex-1 px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:shadow-lg"
+                        disabled={saving}
+                        className="flex-1 px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:shadow-lg disabled:opacity-50 flex items-center justify-center space-x-2"
                       >
-                        Salva
+                        {saving ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Salvataggio...</span>
+                          </>
+                        ) : (
+                          <span>Salva</span>
+                        )}
                       </button>
                     </div>
                   </>

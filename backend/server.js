@@ -77,6 +77,7 @@ const tableRoutes = require('./src/routes/table.routes');
 const couponRoutes = require('./src/routes/coupon.routes');
 const paymentRoutes = require('./src/routes/payment.routes');
 const adminRoutes = require('./src/routes/admin.routes');
+const reviewRoutes = require('./src/routes/review.routes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -88,6 +89,7 @@ app.use('/api/tables', tableRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 // 404 handler
 app.use((req, res) => {
