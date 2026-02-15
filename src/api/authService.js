@@ -170,6 +170,9 @@ export const getCurrentUser = () => {
   }
 };
 
+// Re-export clearTokens for external use (e.g. AuthContext)
+export { clearTokens } from './apiClient';
+
 export default {
   register,
   login,

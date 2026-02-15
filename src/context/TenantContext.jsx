@@ -120,6 +120,7 @@ export const TenantProvider = ({ children }) => {
     setMerchant,
     switchMerchant,
     selectTable,
+    setTableNumber: selectTable,
     clearTenant,
     detectMerchantFromEnvironment,
 

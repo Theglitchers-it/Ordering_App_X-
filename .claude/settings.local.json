@@ -15,7 +15,13 @@
       "Bash(findstr:*)",
       "Bash(cd:*)",
       "Bash(wc:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(for f in *.jsx)",
+      "Bash(do sed -i \"s|from ''\\\\.\\\\./utils|from ''../../utils|g\" \"$f\")",
+      "Bash(done)",
+      "Bash(do sed -i \"s|from ''\\\\.\\\\./context|from ''../../context|g\" \"$f\")",
+      "Bash(npx vite build:*)"
     ]
   }
 }

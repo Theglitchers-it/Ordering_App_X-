@@ -51,12 +51,15 @@ function CartPage() {
     setCouponMessage(null)
   }
 
-  const handleCheckout = () => {
+  const [checkoutLoading, setCheckoutLoading] = useState(false)
+
+  const handleCheckout = async () => {
+    setCheckoutLoading(true)
     const orderNumber = Math.floor(100000 + Math.random() * 900000)
 
     const orderData = {
       orderNumber,
-      customerName: user?.name || 'Ospite',
+      customerName: user?.name || user?.first_name || 'Ospite',
       orderType: tableNumber ? `Tavolo #${tableNumber}` : 'Asporto',
       paymentMethod: 'Carta di Credito',
       subtotal,
@@ -66,19 +69,21 @@ function CartPage() {
       items: cartItems,
       appliedCoupon: appliedCoupon?.code,
       merchantId: currentMerchant?.id || null,
-      merchantName: currentMerchant?.name || null,
+      merchantName: currentMerchant?.name || currentMerchant?.business_name || null,
       tableNumber: tableNumber || null
     }
 
-    // Aggiungi punti fedeltà
     const earnedPoints = addPoints(total)
+    const order = await createOrder(orderData)
 
-    // Crea ordine
-    createOrder(orderData)
+    setCheckoutLoading(false)
+    if (!order) {
+      return
+    }
 
     clearCart()
     removeCoupon()
-    navigate('/order-confirmation', { state: { ...orderData, earnedPoints } })
+    navigate('/order-confirmation', { state: { ...(order || orderData), earnedPoints } })
   }
 
   return (
@@ -368,9 +373,17 @@ function CartPage() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleCheckout}
-                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-4 rounded-full font-bold text-lg hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg"
+                disabled={checkoutLoading}
+                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-4 rounded-full font-bold text-lg hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                🚀 Ordina in 2 minuti
+                {checkoutLoading ? (
+                  <span className="flex items-center justify-center space-x-2">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Invio ordine...</span>
+                  </span>
+                ) : (
+                  '🚀 Ordina in 2 minuti'
+                )}
               </motion.button>
             </motion.div>
           </div>

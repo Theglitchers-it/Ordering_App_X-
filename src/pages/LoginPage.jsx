@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Mail, Lock, Eye, EyeOff, ArrowRight, ChefHat } from 'lucide-react'
 import { useUser } from '../context/UserContext'
+import * as authService from '../api/authService'
+
+const USE_API = import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL !== 'undefined'
 
 function LoginPage() {
   const navigate = useNavigate()
@@ -19,37 +22,63 @@ function LoginPage() {
     setError('')
     setIsLoading(true)
 
-    // Simulazione login (sostituire con API reale)
-    setTimeout(() => {
-      if (email && password) {
-        // Check if admin credentials
-        if (email === 'admin' || (email === 'admin@app.com' && password === 'admin123')) {
+    if (USE_API) {
+      try {
+        const result = await authService.login(email, password)
+        if (!result.success) {
+          setError(result.message || 'Credenziali non valide')
+          setIsLoading(false)
+          return
+        }
+        const { user } = result
+        const adminRoles = ['super_admin', 'admin', 'admin_ops', 'merchant_admin', 'support_agent', 'finance', 'logistics']
+        if (adminRoles.includes(user.role)) {
           localStorage.setItem('adminAuth', JSON.stringify({
-            email: email === 'admin' ? 'admin@app.com' : email,
-            role: 'admin',
-            name: 'Amministratore',
-            loginTime: new Date().toISOString()
+            email: user.email,
+            role: user.role,
+            name: user.first_name || user.email,
+            loginTime: new Date().toISOString(),
+            userId: user.uuid || user.id
           }))
+          localStorage.setItem('adminUser', JSON.stringify(user))
           navigate('/admin/dashboard')
         } else {
-          // Login cliente
-          const userData = {
-            name: email.split('@')[0],
-            email: email,
-            phone: '+39 333 1234567',
-            address: 'Via Roma 123, Milano',
-            joinedDate: new Date().toISOString(),
-            profileImage: null
-          }
-
-          login(userData)
           navigate('/demo')
         }
-      } else {
-        setError('Email e password sono obbligatori')
+      } catch (err) {
+        setError('Errore di connessione al server')
       }
       setIsLoading(false)
-    }, 1000)
+    } else {
+      // Demo mode
+      setTimeout(() => {
+        if (email && password) {
+          if (email === 'admin' || (email === 'admin@app.com' && password === 'admin123')) {
+            localStorage.setItem('adminAuth', JSON.stringify({
+              email: email === 'admin' ? 'admin@app.com' : email,
+              role: 'admin',
+              name: 'Amministratore',
+              loginTime: new Date().toISOString()
+            }))
+            navigate('/admin/dashboard')
+          } else {
+            const userData = {
+              name: email.split('@')[0],
+              email: email,
+              phone: '+39 333 1234567',
+              address: 'Via Roma 123, Milano',
+              joinedDate: new Date().toISOString(),
+              profileImage: null
+            }
+            login(userData)
+            navigate('/demo')
+          }
+        } else {
+          setError('Email e password sono obbligatori')
+        }
+        setIsLoading(false)
+      }, 1000)
+    }
   }
 
   return (

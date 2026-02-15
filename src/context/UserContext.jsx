@@ -1,47 +1,73 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import { useAuth } from './AuthContext'
+import * as authService from '../api/authService'
+
+const USE_API = import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL !== 'undefined'
 
 const UserContext = createContext()
 
 export function UserProvider({ children }) {
-  const [user, setUser] = useState(() => {
+  const auth = useAuth()
+
+  const [localUser, setLocalUser] = useState(() => {
+    if (USE_API) return null
     const saved = localStorage.getItem('user')
     return saved ? JSON.parse(saved) : null
   })
 
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return !!localStorage.getItem('user')
-  })
-
+  // Sync localStorage in demo mode
   useEffect(() => {
-    if (user) {
-      localStorage.setItem('user', JSON.stringify(user))
-      setIsAuthenticated(true)
+    if (USE_API) return
+    if (localUser) {
+      localStorage.setItem('user', JSON.stringify(localUser))
     } else {
       localStorage.removeItem('user')
-      setIsAuthenticated(false)
     }
-  }, [user])
+  }, [localUser])
 
-  const login = (userData) => {
-    setUser(userData)
-    setIsAuthenticated(true)
-  }
+  const user = USE_API ? auth.userAuth : localUser
+  const isAuthenticated = USE_API ? !!auth.userAuth : !!localUser
 
-  const logout = () => {
-    setUser(null)
-    setIsAuthenticated(false)
-    localStorage.removeItem('user')
-    localStorage.removeItem('cart')
-    localStorage.removeItem('favorites')
-  }
+  // login: in API mode takes (email, password), in demo mode takes (userData object)
+  const login = USE_API
+    ? async (emailOrData, password) => {
+        const email = typeof emailOrData === 'string' ? emailOrData : emailOrData.email
+        const pwd = password || (typeof emailOrData === 'object' ? emailOrData.password : '')
+        return auth.loginUser(email, pwd)
+      }
+    : (userData) => {
+        setLocalUser(userData)
+      }
 
-  const updateProfile = (updates) => {
-    setUser(prev => ({ ...prev, ...updates }))
-  }
+  const logout = USE_API
+    ? async () => auth.logoutUser()
+    : () => {
+        setLocalUser(null)
+        localStorage.removeItem('user')
+        localStorage.removeItem('cart')
+        localStorage.removeItem('favorites')
+      }
 
-  const updateProfileImage = (imageUrl) => {
-    setUser(prev => ({ ...prev, profileImage: imageUrl }))
-  }
+  const updateProfile = USE_API
+    ? async (updates) => {
+        // Optimistic local update; server sync can be added later
+        const updated = { ...auth.userAuth, ...updates }
+        localStorage.setItem('user', JSON.stringify(updated))
+        return updated
+      }
+    : (updates) => {
+        setLocalUser(prev => ({ ...prev, ...updates }))
+      }
+
+  const updateProfileImage = USE_API
+    ? async (imageUrl) => {
+        const updated = { ...auth.userAuth, profileImage: imageUrl }
+        localStorage.setItem('user', JSON.stringify(updated))
+        return updated
+      }
+    : (imageUrl) => {
+        setLocalUser(prev => ({ ...prev, profileImage: imageUrl }))
+      }
 
   return (
     <UserContext.Provider

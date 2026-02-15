@@ -58,9 +58,11 @@ import { RBACProvider } from './context/RBACContext'
 import { NotificationsProvider } from './context/NotificationsContext'
 import { TenantProvider } from './context/TenantContext'
 import { MerchantProvider } from './context/MerchantContext'
+import { AuthProvider } from './context/AuthContext'
 
 function App() {
   return (
+    <AuthProvider>
     <MerchantProvider>
       <UserProvider>
       <OrdersProvider>
@@ -135,6 +137,7 @@ function App() {
       </OrdersProvider>
     </UserProvider>
     </MerchantProvider>
+    </AuthProvider>
   )
 }
 

@@ -6,8 +6,7 @@ import SearchBar from '../components/common/SearchBar'
 import CategoriesBar from '../components/common/CategoriesBar'
 import FoodCard from '../components/common/FoodCard'
 import TableSelector from '../components/customer/TableSelector'
-import { categories, foodItems, getFoodsByMerchant } from '../data/foodData'
-import { foods } from '../data/mockData'
+import { useProducts } from '../hooks/useProducts'
 import { useUser } from '../context/UserContext'
 import { useTenant } from '../context/TenantContext'
 import { getTablesByMerchant } from '../data/tables'
@@ -20,7 +19,10 @@ function HomePage() {
   const [showTableSelector, setShowTableSelector] = useState(false)
   const { user } = useUser()
   const { currentMerchant, tableNumber, setTableNumber } = useTenant()
-  const userName = user?.name || 'Ospite'
+  const userName = user?.name || user?.first_name || 'Ospite'
+
+  // Load products from API or static data via useProducts hook
+  const { products, categories, loading: productsLoading } = useProducts(currentMerchant?.id || null)
 
   // Rileva table number da URL
   useEffect(() => {
@@ -31,29 +33,7 @@ function HomePage() {
     }
   }, [searchParams, tableNumber, setTableNumber])
 
-  // Get merchant-specific foods or all foods for demo
-  const allFoods = useMemo(() => {
-    let foodsToShow = foodItems
-
-    // Se c'è un merchant corrente, filtra per quel merchant
-    if (currentMerchant) {
-      foodsToShow = getFoodsByMerchant(currentMerchant.id)
-    }
-
-    // Map to match the old structure for compatibility
-    const enhancedFoods = foodsToShow.map(item => ({
-      id: item.id,
-      name: item.title,
-      description: item.description,
-      price: item.price,
-      image: item.image,
-      rating: item.rating,
-      category: item.category,
-      deliveryTime: item.deliveryTime
-    }))
-
-    return [...enhancedFoods, ...foods]
-  }, [currentMerchant])
+  const allFoods = products
 
   // Get tables for current merchant
   const merchantTables = useMemo(() => {
@@ -182,7 +162,18 @@ function HomePage() {
               </motion.div>
             </AnimatePresence>
 
-            {filteredFoods.length === 0 && (
+            {productsLoading && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center py-12"
+              >
+                <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-3"></div>
+                <p className="text-gray-500 text-lg">Caricamento menu...</p>
+              </motion.div>
+            )}
+
+            {!productsLoading && filteredFoods.length === 0 && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}

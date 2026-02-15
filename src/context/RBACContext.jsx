@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+const USE_API = import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL !== 'undefined'
+
 const RBACContext = createContext()
 
 // Definizione ruoli e permessi
@@ -162,19 +164,22 @@ export function RBACProvider({ children }) {
         if (savedUser && adminAuth) {
           const user = JSON.parse(savedUser)
           setCurrentUser(user)
-        } else {
-          // Crea utente Super Admin di default per testing
+        } else if (!USE_API) {
+          // Demo mode only: auto-grant super_admin for testing
           const defaultUser = {
             id: 1,
             name: 'Admin',
             email: 'admin@example.com',
             role: ROLES.SUPER_ADMIN,
-            merchantId: null, // null per super admin, ID specifico per merchant admin
+            merchantId: null,
             avatar: null,
             createdAt: new Date().toISOString()
           }
           localStorage.setItem('adminUser', JSON.stringify(defaultUser))
           setCurrentUser(defaultUser)
+        } else {
+          // API mode: no auto-grant, user must authenticate
+          setCurrentUser(null)
         }
       } catch (error) {
         console.error('Error loading user:', error)

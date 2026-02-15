@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Mail, Lock, Eye, EyeOff, User, Phone, MapPin, ArrowRight, ChefHat } from 'lucide-react'
 import { useUser } from '../context/UserContext'
+import * as authService from '../api/authService'
+
+const USE_API = import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL !== 'undefined'
 
 function RegisterPage() {
   const navigate = useNavigate()
@@ -46,21 +49,43 @@ function RegisterPage() {
 
     setIsLoading(true)
 
-    // Simulazione registrazione (sostituire con API reale)
-    setTimeout(() => {
-      const userData = {
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        address: formData.address,
-        joinedDate: new Date().toISOString(),
-        profileImage: null
+    if (USE_API) {
+      try {
+        const nameParts = formData.name.split(' ')
+        const result = await authService.register({
+          email: formData.email,
+          password: formData.password,
+          first_name: nameParts[0] || '',
+          last_name: nameParts.slice(1).join(' ') || '',
+          phone: formData.phone,
+          role: 'user'
+        })
+        if (!result.success) {
+          setError(result.message || 'Errore durante la registrazione')
+          setIsLoading(false)
+          return
+        }
+        navigate('/demo')
+      } catch (err) {
+        setError('Errore di connessione al server')
       }
-
-      login(userData)
-      navigate('/demo')
       setIsLoading(false)
-    }, 1000)
+    } else {
+      // Demo mode
+      setTimeout(() => {
+        const userData = {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address,
+          joinedDate: new Date().toISOString(),
+          profileImage: null
+        }
+        login(userData)
+        navigate('/demo')
+        setIsLoading(false)
+      }, 1000)
+    }
   }
 
   return (
