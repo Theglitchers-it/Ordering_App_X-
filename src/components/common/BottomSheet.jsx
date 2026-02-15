@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
-import { bottomSheet } from '../utils/animations'
+import { bottomSheet } from '../../utils/animations'
 
 function BottomSheet({ isOpen, onClose, title, children }) {
   return (

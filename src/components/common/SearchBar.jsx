@@ -1,6 +1,6 @@
 import { Search } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { searchBarSlide } from '../utils/animations'
+import { searchBarSlide } from '../../utils/animations'
 
 function SearchBar({ value, onChange }) {
   return (

@@ -2,8 +2,8 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Heart, Trash2 } from 'lucide-react'
 import { useFavorites } from '../context/FavoritesContext'
-import FoodCard from '../components/FoodCard'
-import Header from '../components/Header'
+import FoodCard from '../components/common/FoodCard'
+import Header from '../components/common/Header'
 import { staggeredEntrance, cardEntrance } from '../utils/animations'
 
 function FavoritesPage() {

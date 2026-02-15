@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { ShoppingCart } from 'lucide-react'
-import { createFlyPath, cartFly } from '../utils/animations'
+import { createFlyPath, cartFly } from '../../utils/animations'
 
 function FlyingCartItem({ isVisible, startPosition, onComplete }) {
   if (!isVisible) return null

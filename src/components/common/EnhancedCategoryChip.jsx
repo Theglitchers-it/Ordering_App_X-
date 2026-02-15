@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { categoryChip } from '../utils/animations'
+import { categoryChip } from '../../utils/animations'
 
 function EnhancedCategoryChip({ category, isSelected, onClick, index }) {
   return (

@@ -8,8 +8,8 @@ import {
 import { useCart } from '../context/CartContext'
 import { useFavorites } from '../context/FavoritesContext'
 import { getFoodById } from '../data/foodData'
-import AnimatedHeart from '../components/AnimatedHeart'
-import Header from '../components/Header'
+import AnimatedHeart from '../components/common/AnimatedHeart'
+import Header from '../components/common/Header'
 
 const swipeConfidenceThreshold = 10000
 const swipePower = (offset, velocity) => {

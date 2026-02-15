@@ -1,5 +1,5 @@
 import { Navigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../../context/AuthContext'
 import { motion } from 'framer-motion'
 import { ShieldAlert, Lock } from 'lucide-react'
 

@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { categoryChip } from '../utils/animations'
+import { categoryChip } from '../../utils/animations'
 
 function CategoriesBar({ categories, selectedCategory, onSelectCategory }) {
   return (

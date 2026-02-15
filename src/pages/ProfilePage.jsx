@@ -10,8 +10,8 @@ import { useUser } from '../context/UserContext'
 import { useLoyalty } from '../context/LoyaltyContext'
 import { useOrders } from '../context/OrdersContext'
 import { useFavorites } from '../context/FavoritesContext'
-import Header from '../components/Header'
-import SpotlightCard from '../components/SpotlightCard'
+import Header from '../components/common/Header'
+import SpotlightCard from '../components/common/SpotlightCard'
 
 function ProfilePage() {
   const navigate = useNavigate()

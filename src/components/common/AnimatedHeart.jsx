@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { Heart } from 'lucide-react'
-import { heartPop } from '../utils/animations'
+import { heartPop } from '../../utils/animations'
 
 function AnimatedHeart({ isFavorite, onClick, className = '', size = 'md' }) {
   const sizes = {

@@ -8,7 +8,7 @@ import { useOrders } from '../context/OrdersContext'
 import { useUser } from '../context/UserContext'
 import { useTenant } from '../context/TenantContext'
 import { useState } from 'react'
-import Header from '../components/Header'
+import Header from '../components/common/Header'
 
 function CartPage() {
   const navigate = useNavigate()

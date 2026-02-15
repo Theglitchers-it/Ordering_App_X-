@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom'
 import { Star, Plus, Clock } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { useCart } from '../context/CartContext'
-import { useFavorites } from '../context/FavoritesContext'
-import { staggeredEntrance, hoverLift } from '../utils/animations'
+import { useCart } from '../../context/CartContext'
+import { useFavorites } from '../../context/FavoritesContext'
+import { staggeredEntrance, hoverLift } from '../../utils/animations'
 import AnimatedHeart from './AnimatedHeart'
 
 function FoodCard({ food, index }) {

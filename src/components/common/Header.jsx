@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom'
 import { ShoppingCart, Bell, Award, Tag } from 'lucide-react'
-import { useCart } from '../context/CartContext'
-import { useOrders } from '../context/OrdersContext'
-import { useLoyalty } from '../context/LoyaltyContext'
-import { useUser } from '../context/UserContext'
+import { useCart } from '../../context/CartContext'
+import { useOrders } from '../../context/OrdersContext'
+import { useLoyalty } from '../../context/LoyaltyContext'
+import { useUser } from '../../context/UserContext'
 import { motion, AnimatePresence } from 'framer-motion'
-import { cartFly } from '../utils/animations'
+import { cartFly } from '../../utils/animations'
 
 function Header({ showActions = true }) {
   const { getCartCount } = useCart()
