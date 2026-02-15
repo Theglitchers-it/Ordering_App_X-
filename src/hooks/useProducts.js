@@ -120,15 +120,9 @@ export function useProductById(productId) {
       )
       if (found) {
         setProduct({
-          id: found.id,
+          ...found,
           name: found.title || found.name,
-          title: found.title || found.name,
-          description: found.description,
-          price: found.price,
-          image: found.image,
-          rating: found.rating,
-          category: found.category,
-          deliveryTime: found.deliveryTime
+          title: found.title || found.name
         })
       }
     }

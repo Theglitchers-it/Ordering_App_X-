@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { useCart } from '../context/CartContext'
 import { useFavorites } from '../context/FavoritesContext'
-import { getFoodById } from '../data/foodData'
+import { useProductById } from '../hooks/useProducts'
 import AnimatedHeart from '../components/common/AnimatedHeart'
 import Header from '../components/common/Header'
 
@@ -20,13 +20,14 @@ function ProductDetailPageV2() {
   const { id } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const product = getFoodById(id) || location.state?.product
+  const { product: fetchedProduct, loading } = useProductById(id)
+  const product = fetchedProduct || location.state?.product
   const { addToCart } = useCart()
   const { isFavorite, toggleFavorite } = useFavorites()
 
   const [quantity, setQuantity] = useState(1)
   const [selectedImage, setSelectedImage] = useState(0)
-  const [selectedVariant, setSelectedVariant] = useState(product?.variants?.[1]?.id || null)
+  const [selectedVariant, setSelectedVariant] = useState(null)
   const [selectedAddOns, setSelectedAddOns] = useState([])
   const [customNotes, setCustomNotes] = useState('')
   const [showShareMenu, setShowShareMenu] = useState(false)
@@ -36,6 +37,21 @@ function ProductDetailPageV2() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' })
   }, [id])
+
+  // Set default variant when product loads
+  useEffect(() => {
+    if (product?.variants?.[1]?.id) {
+      setSelectedVariant(product.variants[1].id)
+    }
+  }, [product])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-gray-900 border-t-transparent rounded-full"></div>
+      </div>
+    )
+  }
 
   if (!product) {
     navigate(-1)

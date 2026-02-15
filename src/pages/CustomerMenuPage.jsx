@@ -9,7 +9,7 @@ import TableSelector from '../components/customer/TableSelector'
 import { useProducts } from '../hooks/useProducts'
 import { useUser } from '../context/UserContext'
 import { useTenant } from '../context/TenantContext'
-import { getTablesByMerchant } from '../data/tables'
+import { useTables } from '../hooks/useTables'
 import { staggeredEntrance, listSwap, cardEntrance } from '../utils/animations'
 
 function HomePage() {
@@ -24,6 +24,9 @@ function HomePage() {
   // Load products from API or static data via useProducts hook
   const { products, categories, loading: productsLoading } = useProducts(currentMerchant?.id || null)
 
+  // Load tables from API or static data via useTables hook
+  const { tables: merchantTables } = useTables(currentMerchant?.id || null)
+
   // Rileva table number da URL
   useEffect(() => {
     const tableFromUrl = searchParams.get('table')
@@ -34,14 +37,6 @@ function HomePage() {
   }, [searchParams, tableNumber, setTableNumber])
 
   const allFoods = products
-
-  // Get tables for current merchant
-  const merchantTables = useMemo(() => {
-    if (currentMerchant) {
-      return getTablesByMerchant(currentMerchant.id)
-    }
-    return []
-  }, [currentMerchant])
 
   const handleSelectTable = (selectedTableNumber) => {
     setTableNumber(selectedTableNumber)

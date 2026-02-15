@@ -6,6 +6,9 @@ import {
 } from 'lucide-react'
 import { useRBAC, PERMISSIONS } from '../../context/RBACContext'
 import AdminLayoutNew from '../../components/admin/AdminLayoutNew'
+import userService from '../../api/userService'
+
+const USE_API = import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL !== 'undefined'
 
 function AdminUsersPageNew() {
   const navigate = useNavigate()
@@ -27,12 +30,33 @@ function AdminUsersPageNew() {
     loadUsers()
   }, [navigate, hasPermission])
 
-  const loadUsers = () => {
+  const loadUsers = async () => {
+    if (USE_API) {
+      try {
+        const result = await userService.getUsers()
+        if (result.success && result.users) {
+          setUsers(result.users.map(u => ({
+            ...u,
+            name: u.first_name && u.last_name ? `${u.first_name} ${u.last_name}` : u.name || u.email,
+            loyaltyPoints: u.loyalty_points ?? u.loyaltyPoints ?? 0,
+            loyaltyTier: u.loyalty_tier || u.loyaltyTier || 'Silver',
+            totalSpent: u.total_spent ?? u.totalSpent ?? 0,
+            totalOrders: u.total_orders ?? u.totalOrders ?? 0,
+            banned: u.is_banned ?? u.banned ?? false,
+            status: (u.is_banned ?? u.banned) ? 'banned' : 'active',
+            lastOrder: u.last_order_at || u.lastOrder || u.createdAt,
+            phone: u.phone || '',
+            address: u.address || ''
+          })))
+          return
+        }
+      } catch (e) { /* fall through to demo */ }
+    }
+
     const saved = localStorage.getItem('users')
     if (saved) {
       setUsers(JSON.parse(saved))
     } else {
-      // Demo users
       const demoUsers = [
         {
           id: 1,
@@ -100,7 +124,7 @@ function AdminUsersPageNew() {
     return matchesSearch && matchesStatus
   })
 
-  const handleBanUser = (userId) => {
+  const handleBanUser = async (userId) => {
     if (!hasPermission(PERMISSIONS.BAN_USERS)) {
       alert('Non hai il permesso di bannare utenti')
       return
@@ -108,6 +132,14 @@ function AdminUsersPageNew() {
 
     const user = users.find(u => u.id === userId)
     if (confirm(`Sei sicuro di voler ${user.banned ? 'sbannare' : 'bannare'} ${user.name}?`)) {
+      if (USE_API) {
+        try {
+          const result = user.banned
+            ? await userService.unbanUser(userId)
+            : await userService.banUser(userId)
+          if (result.success) { await loadUsers(); return }
+        } catch (e) { /* fall through */ }
+      }
       const updated = users.map(u =>
         u.id === userId ? { ...u, banned: !u.banned, status: !u.banned ? 'banned' : 'active' } : u
       )
@@ -115,7 +147,7 @@ function AdminUsersPageNew() {
     }
   }
 
-  const handleCreditPoints = (userId, points) => {
+  const handleCreditPoints = async (userId) => {
     if (!hasPermission(PERMISSIONS.UPDATE_USERS)) {
       alert('Non hai il permesso di modificare i punti loyalty')
       return
@@ -127,6 +159,16 @@ function AdminUsersPageNew() {
     if (newPoints !== null) {
       const pointsToAdd = parseInt(newPoints)
       if (!isNaN(pointsToAdd)) {
+        if (USE_API) {
+          try {
+            const result = await userService.adjustPoints(userId, pointsToAdd, 'Admin credit')
+            if (result.success) {
+              alert(`${pointsToAdd} punti aggiunti a ${user.name}`)
+              await loadUsers()
+              return
+            }
+          } catch (e) { /* fall through */ }
+        }
         const updated = users.map(u =>
           u.id === userId ? { ...u, loyaltyPoints: u.loyaltyPoints + pointsToAdd } : u
         )

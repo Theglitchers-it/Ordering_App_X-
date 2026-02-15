@@ -7,6 +7,9 @@ import {
 } from 'lucide-react'
 import { useRBAC, PERMISSIONS } from '../../context/RBACContext'
 import AdminLayoutNew from '../../components/admin/AdminLayoutNew'
+import merchantService from '../../api/merchantService'
+
+const USE_API = import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL !== 'undefined'
 
 function AdminMerchantsPage() {
   const navigate = useNavigate()
@@ -22,16 +25,36 @@ function AdminMerchantsPage() {
     const auth = localStorage.getItem('adminAuth')
     if (!auth) navigate('/login')
 
-    // Load merchants from localStorage
     loadMerchants()
   }, [navigate])
 
-  const loadMerchants = () => {
+  const loadMerchants = async () => {
+    if (USE_API) {
+      try {
+        const result = await merchantService.getMerchants()
+        if (result.success && result.merchants) {
+          setMerchants(result.merchants.map(m => ({
+            ...m,
+            name: m.business_name || m.name,
+            commissionRate: m.commission_rate ?? m.commissionRate ?? 15,
+            totalOrders: m.total_orders ?? m.totalOrders ?? 0,
+            revenue: m.total_revenue ?? m.revenue ?? 0,
+            openingHours: m.opening_hours || m.openingHours || '',
+            minOrder: m.min_order_amount ?? m.minOrder ?? 0,
+            deliveryTime: m.delivery_time || m.deliveryTime || '',
+            rating: m.average_rating ?? m.rating ?? 0,
+            city: m.city || '',
+            category: m.category || m.cuisine_type || ''
+          })))
+          return
+        }
+      } catch (e) { /* fall through to demo */ }
+    }
+
     const saved = localStorage.getItem('merchants')
     if (saved) {
       setMerchants(JSON.parse(saved))
     } else {
-      // Demo data
       const demoMerchants = [
         {
           id: 1,
@@ -149,19 +172,36 @@ function AdminMerchantsPage() {
     setShowModal(true)
   }
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (!hasPermission(PERMISSIONS.DELETE_MERCHANTS)) {
       alert('Non hai il permesso di eliminare ristoranti')
       return
     }
     if (confirm('Sei sicuro di voler eliminare questo ristorante?')) {
+      if (USE_API) {
+        try {
+          const result = await merchantService.deleteMerchant(id)
+          if (result.success) { await loadMerchants(); return }
+        } catch (e) { /* fall through */ }
+      }
       const updated = merchants.filter(m => m.id !== id)
       saveMerchants(updated)
     }
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (modalMode === 'create') {
+      if (USE_API) {
+        try {
+          const result = await merchantService.createMerchant({
+            ...selectedMerchant,
+            business_name: selectedMerchant.name,
+            commission_rate: selectedMerchant.commissionRate,
+            min_order_amount: selectedMerchant.minOrder
+          })
+          if (result.success) { setShowModal(false); await loadMerchants(); return }
+        } catch (e) { /* fall through */ }
+      }
       const newMerchant = {
         ...selectedMerchant,
         id: Math.max(0, ...merchants.map(m => m.id)) + 1,
@@ -172,6 +212,17 @@ function AdminMerchantsPage() {
       }
       saveMerchants([...merchants, newMerchant])
     } else if (modalMode === 'edit') {
+      if (USE_API) {
+        try {
+          const result = await merchantService.updateMerchant(selectedMerchant.id, {
+            ...selectedMerchant,
+            business_name: selectedMerchant.name,
+            commission_rate: selectedMerchant.commissionRate,
+            min_order_amount: selectedMerchant.minOrder
+          })
+          if (result.success) { setShowModal(false); await loadMerchants(); return }
+        } catch (e) { /* fall through */ }
+      }
       const updated = merchants.map(m =>
         m.id === selectedMerchant.id ? selectedMerchant : m
       )
@@ -180,14 +231,26 @@ function AdminMerchantsPage() {
     setShowModal(false)
   }
 
-  const handleApprove = (id) => {
+  const handleApprove = async (id) => {
+    if (USE_API) {
+      try {
+        const result = await merchantService.approveMerchant(id)
+        if (result.success) { await loadMerchants(); return }
+      } catch (e) { /* fall through */ }
+    }
     const updated = merchants.map(m =>
       m.id === id ? { ...m, status: 'active' } : m
     )
     saveMerchants(updated)
   }
 
-  const handleSuspend = (id) => {
+  const handleSuspend = async (id) => {
+    if (USE_API) {
+      try {
+        const result = await merchantService.blockMerchant(id)
+        if (result.success) { await loadMerchants(); return }
+      } catch (e) { /* fall through */ }
+    }
     const updated = merchants.map(m =>
       m.id === id ? { ...m, status: 'suspended' } : m
     )

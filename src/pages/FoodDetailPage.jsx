@@ -4,7 +4,7 @@ import { ArrowLeft, Star, Plus, Minus, Heart } from 'lucide-react'
 import { useState } from 'react'
 import { useCart } from '../context/CartContext'
 import { useFavorites } from '../context/FavoritesContext'
-import { foods } from '../data/mockData'
+import { useProductById } from '../hooks/useProducts'
 
 function FoodDetailPage() {
   const { id } = useParams()
@@ -12,10 +12,18 @@ function FoodDetailPage() {
   const { addToCart, getCartCount } = useCart()
   const { toggleFavorite, isFavorite } = useFavorites()
   const [quantity, setQuantity] = useState(1)
+  const { product: food, loading } = useProductById(id)
 
-  const food = foods.find((f) => f.id === parseInt(id))
   const isInFavorites = isFavorite(parseInt(id))
   const cartCount = getCartCount()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-gray-900 border-t-transparent rounded-full"></div>
+      </div>
+    )
+  }
 
   if (!food) {
     return <div>Piatto non trovato</div>
@@ -77,9 +85,9 @@ function FoodDetailPage() {
               className="p-4 sm:p-6 lg:p-8 order-2 lg:order-1 flex flex-col"
             >
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-1">
-                {food.name}
+                {food.name || food.title}
               </h1>
-              <p className="text-sm sm:text-base text-gray-500 mb-4">di {food.chef}</p>
+              {food.chef && <p className="text-sm sm:text-base text-gray-500 mb-4">di {food.chef}</p>}
 
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
@@ -101,7 +109,7 @@ function FoodDetailPage() {
               </div>
 
               <p className="text-gray-600 text-sm sm:text-base mb-4 leading-relaxed line-clamp-3 lg:line-clamp-4">
-                {food.longDescription}
+                {food.longDescription || food.description}
               </p>
 
               <div className="border-t pt-4 mt-auto">

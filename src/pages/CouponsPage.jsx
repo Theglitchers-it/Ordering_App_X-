@@ -3,15 +3,24 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Tag, Copy, CheckCircle, Sparkles } from 'lucide-react'
 import { useCoupons } from '../context/CouponsContext'
 import { useLoyalty } from '../context/LoyaltyContext'
-import { useState } from 'react'
+import { useTenant } from '../context/TenantContext'
+import { useState, useEffect } from 'react'
 
 function CouponsPage() {
   const navigate = useNavigate()
   const { getAvailableCoupons } = useCoupons()
   const { tier } = useLoyalty()
+  const { currentMerchant } = useTenant()
   const [copiedCode, setCopiedCode] = useState(null)
+  const [coupons, setCoupons] = useState([])
 
-  const coupons = getAvailableCoupons(tier)
+  useEffect(() => {
+    const load = async () => {
+      const result = await getAvailableCoupons(tier, currentMerchant?.id || null)
+      setCoupons(result || [])
+    }
+    load()
+  }, [tier, currentMerchant, getAvailableCoupons])
 
   const copyCode = (code) => {
     navigator.clipboard.writeText(code)
@@ -152,11 +161,11 @@ function CouponsPage() {
                     <div className="p-4 bg-gray-50">
                       <div className="flex items-center justify-between text-xs text-gray-600">
                         <span>
-                          Ordine minimo: <span className="font-semibold text-gray-900">€{coupon.minOrder}</span>
+                          Ordine minimo: <span className="font-semibold text-gray-900">€{coupon.min_order_amount || coupon.minOrder || 0}</span>
                         </span>
                         <span>
                           Scade: <span className="font-semibold text-gray-900">
-                            {new Date(coupon.expiresAt).toLocaleDateString('it-IT')}
+                            {new Date(coupon.valid_until || coupon.expiresAt).toLocaleDateString('it-IT')}
                           </span>
                         </span>
                       </div>

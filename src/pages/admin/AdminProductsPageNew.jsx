@@ -7,6 +7,9 @@ import {
 } from 'lucide-react'
 import { useRBAC, PERMISSIONS } from '../../context/RBACContext'
 import AdminLayoutNew from '../../components/admin/AdminLayoutNew'
+import productService from '../../api/productService'
+
+const USE_API = import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL !== 'undefined'
 
 function AdminProductsPageNew() {
   const navigate = useNavigate()
@@ -30,12 +33,30 @@ function AdminProductsPageNew() {
     loadProducts()
   }, [navigate, hasPermission])
 
-  const loadProducts = () => {
+  const loadProducts = async () => {
+    if (USE_API) {
+      try {
+        const result = await productService.getProducts()
+        if (result.success && result.products) {
+          setProducts(result.products.map(p => ({
+            ...p,
+            available: p.is_available ?? p.available ?? true,
+            prepTime: p.prep_time ?? p.prepTime ?? 15,
+            tags: p.tags || [],
+            variants: p.variants || [],
+            addons: p.addons || [],
+            sold: p.total_sold ?? p.sold ?? 0,
+            rating: p.average_rating ?? p.rating ?? 0
+          })))
+          return
+        }
+      } catch (e) { /* fall through to demo */ }
+    }
+
     const saved = localStorage.getItem('products')
     if (saved) {
       setProducts(JSON.parse(saved))
     } else {
-      // Demo products
       const demoProducts = [
         {
           id: 1,
@@ -162,19 +183,31 @@ function AdminProductsPageNew() {
     setShowModal(true)
   }
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (!hasPermission(PERMISSIONS.DELETE_PRODUCTS)) {
       alert('Non hai il permesso di eliminare prodotti')
       return
     }
     if (confirm('Sei sicuro di voler eliminare questo prodotto?')) {
+      if (USE_API) {
+        try {
+          const result = await productService.deleteProduct(id)
+          if (result.success) { await loadProducts(); return }
+        } catch (e) { /* fall through */ }
+      }
       const updated = products.filter(p => p.id !== id)
       saveProducts(updated)
     }
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (modalMode === 'create') {
+      if (USE_API) {
+        try {
+          const result = await productService.createProduct(selectedProduct)
+          if (result.success) { setShowModal(false); await loadProducts(); return }
+        } catch (e) { /* fall through */ }
+      }
       const newProduct = {
         ...selectedProduct,
         id: Math.max(0, ...products.map(p => p.id)) + 1,
@@ -184,6 +217,12 @@ function AdminProductsPageNew() {
       }
       saveProducts([...products, newProduct])
     } else if (modalMode === 'edit') {
+      if (USE_API) {
+        try {
+          const result = await productService.updateProduct(selectedProduct.id, selectedProduct)
+          if (result.success) { setShowModal(false); await loadProducts(); return }
+        } catch (e) { /* fall through */ }
+      }
       const updated = products.map(p =>
         p.id === selectedProduct.id ? selectedProduct : p
       )
@@ -192,10 +231,16 @@ function AdminProductsPageNew() {
     setShowModal(false)
   }
 
-  const handleToggleAvailable = (id) => {
+  const handleToggleAvailable = async (id) => {
     if (!hasPermission(PERMISSIONS.UPDATE_PRODUCTS)) {
       alert('Non hai il permesso di modificare prodotti')
       return
+    }
+    if (USE_API) {
+      try {
+        const result = await productService.toggleProductAvailability(id)
+        if (result.success) { await loadProducts(); return }
+      } catch (e) { /* fall through */ }
     }
     const updated = products.map(p =>
       p.id === id ? { ...p, available: !p.available } : p
