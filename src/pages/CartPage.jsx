@@ -1,14 +1,17 @@
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Trash2, Plus, Minus, ShoppingBag, Tag, X, CheckCircle, Award, Loader2 } from 'lucide-react'
+import { ArrowLeft, Trash2, Plus, Minus, ShoppingBag, Tag, X, CheckCircle, Award, Loader2, CreditCard, Banknote } from 'lucide-react'
 import { useCart } from '../context/CartContext'
 import { useCoupons } from '../context/CouponsContext'
 import { useLoyalty } from '../context/LoyaltyContext'
 import { useOrders } from '../context/OrdersContext'
 import { useUser } from '../context/UserContext'
 import { useTenant } from '../context/TenantContext'
-import { useState } from 'react'
+import { usePayment } from '../hooks/usePayment'
+import { useState, lazy, Suspense } from 'react'
 import Header from '../components/common/Header'
+
+const StripeCheckout = lazy(() => import('../components/payment/StripeCheckout'))
 
 function CartPage() {
   const navigate = useNavigate()
@@ -18,10 +21,14 @@ function CartPage() {
   const { createOrder } = useOrders()
   const { user } = useUser()
   const { currentMerchant, tableNumber } = useTenant()
+  const { isStripeEnabled, createIntent, clientSecret, stripeKey, reset: resetPayment } = usePayment()
 
   const [couponCode, setCouponCode] = useState('')
   const [couponMessage, setCouponMessage] = useState(null)
   const [applying, setApplying] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState('card') // 'card' or 'cash'
+  const [showStripeForm, setShowStripeForm] = useState(false)
+  const [pendingOrder, setPendingOrder] = useState(null)
 
   const subtotal = getCartTotal()
   const loyaltyDiscount = (subtotal * getDiscount()) / 100
@@ -53,15 +60,13 @@ function CartPage() {
 
   const [checkoutLoading, setCheckoutLoading] = useState(false)
 
-  const handleCheckout = async () => {
-    setCheckoutLoading(true)
+  const buildOrderData = () => {
     const orderNumber = Math.floor(100000 + Math.random() * 900000)
-
-    const orderData = {
+    return {
       orderNumber,
       customerName: user?.name || user?.first_name || 'Ospite',
       orderType: tableNumber ? `Tavolo #${tableNumber}` : 'Asporto',
-      paymentMethod: 'Carta di Credito',
+      paymentMethod: paymentMethod === 'cash' ? 'Contanti' : 'Carta di Credito',
       subtotal,
       loyaltyDiscount,
       couponDiscount,
@@ -72,18 +77,46 @@ function CartPage() {
       merchantName: currentMerchant?.name || currentMerchant?.business_name || null,
       tableNumber: tableNumber || null
     }
+  }
 
+  const handleCheckout = async () => {
+    setCheckoutLoading(true)
+    const orderData = buildOrderData()
     const earnedPoints = addPoints(total)
     const order = await createOrder(orderData)
 
     setCheckoutLoading(false)
-    if (!order) {
+    if (!order) return
+
+    // If Stripe is enabled and user chose card, show Stripe form
+    if (isStripeEnabled && paymentMethod === 'card') {
+      setPendingOrder({ ...order, earnedPoints })
+      setShowStripeForm(true)
       return
     }
 
+    // Cash or demo mode: complete immediately
     clearCart()
     removeCoupon()
     navigate('/order-confirmation', { state: { ...(order || orderData), earnedPoints } })
+  }
+
+  const handleStripeSuccess = () => {
+    clearCart()
+    removeCoupon()
+    resetPayment()
+    setShowStripeForm(false)
+    navigate('/order-confirmation', { state: pendingOrder })
+  }
+
+  const handleStripeError = (error) => {
+    console.error('[CartPage] Stripe payment error:', error)
+  }
+
+  const handleCancelStripe = () => {
+    setShowStripeForm(false)
+    setPendingOrder(null)
+    resetPayment()
   }
 
   return (
@@ -369,6 +402,35 @@ function CartPage() {
                 )}
               </div>
 
+              {/* Payment Method Selection */}
+              <div className="mb-6">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">Metodo di pagamento</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => setPaymentMethod('card')}
+                    className={`flex items-center justify-center space-x-2 p-3 rounded-xl border-2 transition-all ${
+                      paymentMethod === 'card'
+                        ? 'border-primary bg-orange-50 text-primary'
+                        : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    <CreditCard className="w-5 h-5" />
+                    <span className="font-medium text-sm">Carta</span>
+                  </button>
+                  <button
+                    onClick={() => setPaymentMethod('cash')}
+                    className={`flex items-center justify-center space-x-2 p-3 rounded-xl border-2 transition-all ${
+                      paymentMethod === 'cash'
+                        ? 'border-primary bg-orange-50 text-primary'
+                        : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    <Banknote className="w-5 h-5" />
+                    <span className="font-medium text-sm">Contanti</span>
+                  </button>
+                </div>
+              </div>
+
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -381,13 +443,58 @@ function CartPage() {
                     <Loader2 className="w-5 h-5 animate-spin" />
                     <span>Invio ordine...</span>
                   </span>
+                ) : paymentMethod === 'cash' ? (
+                  'Ordina - Paga in cassa'
                 ) : (
-                  '🚀 Ordina in 2 minuti'
+                  'Procedi al pagamento'
                 )}
               </motion.button>
             </motion.div>
           </div>
         )}
+        {/* Stripe Checkout Overlay */}
+        <AnimatePresence>
+          {showStripeForm && pendingOrder && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl"
+              >
+                <div className="flex items-center justify-between p-6 border-b">
+                  <h2 className="text-xl font-bold text-gray-900">Pagamento Sicuro</h2>
+                  <button
+                    onClick={handleCancelStripe}
+                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    <X className="w-5 h-5 text-gray-500" />
+                  </button>
+                </div>
+                <div className="p-6">
+                  <Suspense
+                    fallback={
+                      <div className="flex items-center justify-center py-12">
+                        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                      </div>
+                    }
+                  >
+                    <StripeCheckout
+                      orderId={pendingOrder.id || pendingOrder.orderNumber}
+                      onSuccess={handleStripeSuccess}
+                      onError={handleStripeError}
+                    />
+                  </Suspense>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
     </div>
   )

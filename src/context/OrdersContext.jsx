@@ -241,6 +241,34 @@ export function OrdersProvider({ children }) {
     )
   }
 
+  // Load orders for a specific merchant (used in merchant dashboard)
+  const loadOrdersByMerchant = async (merchantId) => {
+    if (!USE_API) return getOrdersByMerchant(merchantId)
+    setLoading(true)
+    try {
+      const result = await orderService.getOrdersByMerchant(merchantId, { limit: 100 })
+      if (result.success && result.orders) {
+        const normalized = result.orders.map(normalizeOrder)
+        // Merge merchant orders into state without duplicating
+        setOrders(prev => {
+          const existingIds = new Set(prev.map(o => o.id))
+          const newOrders = normalized.filter(o => !existingIds.has(o.id))
+          const updated = prev.map(o => {
+            const fresh = normalized.find(n => n.id === o.id)
+            return fresh || o
+          })
+          return [...updated, ...newOrders]
+        })
+        setLoading(false)
+        return normalized
+      }
+    } catch (err) {
+      console.error('[OrdersContext] Failed to load merchant orders:', err)
+    }
+    setLoading(false)
+    return getOrdersByMerchant(merchantId)
+  }
+
   return (
     <OrdersContext.Provider
       value={{
@@ -255,6 +283,7 @@ export function OrdersProvider({ children }) {
         clearAllNotifications,
         getOrdersByMerchant,
         getOrdersByTable,
+        loadOrdersByMerchant,
         refreshOrders: loadOrdersFromAPI
       }}
     >

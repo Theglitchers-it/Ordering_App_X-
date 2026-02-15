@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -9,15 +9,38 @@ import {
   AlertCircle,
   Filter,
   Search,
-  Users
+  Users,
+  Wifi,
+  WifiOff,
+  RefreshCw
 } from 'lucide-react';
 import { useOrders } from '../../context/OrdersContext';
+import { useSocket } from '../../hooks/useSocket';
 
 const MerchantOrdersPage = () => {
   const merchantAuth = JSON.parse(localStorage.getItem('merchantAuth') || '{}');
   const merchantId = merchantAuth.merchantId || 'merchant_1';
 
-  const { orders, updateOrderStatus, getOrdersByMerchant } = useOrders();
+  const { orders, updateOrderStatus, getOrdersByMerchant, loadOrdersByMerchant, refreshOrders } = useOrders();
+
+  // Socket.io real-time
+  const { connected: socketConnected, enabled: socketEnabled, setCallback } = useSocket({ merchantId });
+
+  // Refresh orders from API on mount and when socket receives new order
+  useEffect(() => {
+    if (merchantId) loadOrdersByMerchant(merchantId);
+  }, [merchantId]);
+
+  // Listen for real-time events
+  useEffect(() => {
+    setCallback('onNewOrder', () => {
+      loadOrdersByMerchant(merchantId);
+    });
+    setCallback('onOrderStatusUpdate', () => {
+      loadOrdersByMerchant(merchantId);
+    });
+  }, [merchantId, setCallback]);
+
   const merchantOrders = getOrdersByMerchant(merchantId);
 
   const [selectedStatus, setSelectedStatus] = useState('all');
@@ -121,6 +144,23 @@ const MerchantOrdersPage = () => {
                 <h1 className="text-3xl font-bold text-gray-900">Ordini</h1>
                 <p className="text-gray-600 mt-1">{filteredOrders.length} ordini trovati</p>
               </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              {socketEnabled && (
+                <span className={`flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-medium ${
+                  socketConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                }`}>
+                  {socketConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                  <span>{socketConnected ? 'Live' : 'Offline'}</span>
+                </span>
+              )}
+              <button
+                onClick={() => loadOrdersByMerchant(merchantId)}
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors duration-200"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>Aggiorna</span>
+              </button>
             </div>
           </div>
         </div>

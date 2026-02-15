@@ -8,17 +8,35 @@ import {
   QrCode as QrCodeIcon,
   Users,
   CheckCircle,
-  XCircle
+  XCircle,
+  Loader2,
+  Trash2
 } from 'lucide-react';
-import { getTablesByMerchant, getTableStats } from '../../data/tables';
+import { useTables } from '../../hooks/useTables';
 
 const MerchantTablesPage = () => {
   const merchantAuth = JSON.parse(localStorage.getItem('merchantAuth') || '{}');
   const merchantId = merchantAuth.merchantId || 'merchant_1'; // Fallback for demo
 
-  const tables = getTablesByMerchant(merchantId);
-  const stats = getTableStats(merchantId);
+  const { tables, stats, loading, addTable, deleteTable } = useTables(merchantId);
   const [selectedTable, setSelectedTable] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newTableNumber, setNewTableNumber] = useState('');
+  const [newTableCapacity, setNewTableCapacity] = useState(2);
+  const [newTableLocation, setNewTableLocation] = useState('Interno');
+
+  const handleAddTable = async () => {
+    if (!newTableNumber) return;
+    await addTable({
+      tableNumber: parseInt(newTableNumber),
+      capacity: newTableCapacity,
+      location: newTableLocation
+    });
+    setShowAddModal(false);
+    setNewTableNumber('');
+    setNewTableCapacity(2);
+    setNewTableLocation('Interno');
+  };
 
   const handleDownloadQR = (table) => {
     // Simulate QR code download
@@ -43,7 +61,10 @@ const MerchantTablesPage = () => {
                 <p className="text-gray-600 mt-1">{stats.total} tavoli configurati</p>
               </div>
             </div>
-            <button className="flex items-center space-x-2 px-6 py-3 bg-primary hover:bg-opacity-90 text-white rounded-lg font-semibold transition-all duration-200 transform hover:scale-105">
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center space-x-2 px-6 py-3 bg-primary hover:bg-opacity-90 text-white rounded-lg font-semibold transition-all duration-200 transform hover:scale-105"
+            >
               <Plus className="w-5 h-5" />
               <span>Aggiungi Tavolo</span>
             </button>
@@ -52,6 +73,14 @@ const MerchantTablesPage = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Loading */}
+        {loading && (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+            <span className="ml-3 text-gray-600">Caricamento tavoli...</span>
+          </div>
+        )}
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -188,6 +217,78 @@ const MerchantTablesPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Add Table Modal */}
+      {showAddModal && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setShowAddModal(false)}
+        >
+          <motion.div
+            initial={{ scale: 0.9, y: 20 }}
+            animate={{ scale: 1, y: 0 }}
+            className="bg-white rounded-2xl p-8 max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Aggiungi Nuovo Tavolo</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Numero Tavolo</label>
+                <input
+                  type="number"
+                  value={newTableNumber}
+                  onChange={(e) => setNewTableNumber(e.target.value)}
+                  placeholder="Es. 21"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Capacita (posti)</label>
+                <select
+                  value={newTableCapacity}
+                  onChange={(e) => setNewTableCapacity(parseInt(e.target.value))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                >
+                  <option value={2}>2 posti</option>
+                  <option value={4}>4 posti</option>
+                  <option value={6}>6 posti</option>
+                  <option value={8}>8 posti</option>
+                  <option value={10}>10 posti</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Posizione</label>
+                <select
+                  value={newTableLocation}
+                  onChange={(e) => setNewTableLocation(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                >
+                  <option value="Interno">Interno</option>
+                  <option value="Esterno">Esterno</option>
+                  <option value="Terrazza">Terrazza</option>
+                  <option value="Giardino">Giardino</option>
+                  <option value="Sala privata">Sala privata</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex space-x-3 mt-6">
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+              >
+                Annulla
+              </button>
+              <button
+                onClick={handleAddTable}
+                disabled={!newTableNumber}
+                className="flex-1 px-4 py-3 bg-primary hover:bg-opacity-90 text-white rounded-lg font-semibold transition-all duration-200 disabled:opacity-50"
+              >
+                Aggiungi
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };

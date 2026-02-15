@@ -8,24 +8,27 @@ import {
   Trash2,
   Search,
   Filter,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Loader2
 } from 'lucide-react';
-import { getFoodsByMerchant } from '../../data/foodData';
+import { useProducts } from '../../hooks/useProducts';
 
 const MerchantMenuBuilderPage = () => {
   const merchantAuth = JSON.parse(localStorage.getItem('merchantAuth') || '{}');
   const merchantId = merchantAuth.merchantId || 'merchant_1'; // Fallback for demo
 
-  const [dishes, setDishes] = useState(getFoodsByMerchant(merchantId));
+  const { products: dishes, categories: productCategories, loading } = useProducts(merchantId);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
 
-  const categories = ['all', 'pizza', 'pasta', 'burgers', 'desserts', 'drinks', 'salads'];
+  const categories = ['all', ...new Set(productCategories.filter(c => c.id !== 'all').map(c => c.id))];
 
   const filteredDishes = dishes.filter(dish => {
-    const matchesSearch = dish.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || dish.category === selectedCategory;
+    const name = dish.title || dish.name || '';
+    const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase());
+    const cat = (dish.category || '').toLowerCase();
+    const matchesCategory = selectedCategory === 'all' || cat === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -59,6 +62,14 @@ const MerchantMenuBuilderPage = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Loading */}
+        {loading && (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+            <span className="ml-3 text-gray-600">Caricamento menu...</span>
+          </div>
+        )}
+
         {/* Filters */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
           <div className="grid md:grid-cols-2 gap-4">

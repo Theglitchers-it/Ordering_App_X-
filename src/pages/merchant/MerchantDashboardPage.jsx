@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -13,6 +13,8 @@ import {
   Euro,
   Users
 } from 'lucide-react';
+import { useOrders } from '../../context/OrdersContext';
+import { useTables } from '../../hooks/useTables';
 
 const MerchantDashboardPage = () => {
   const navigate = useNavigate();
@@ -26,13 +28,28 @@ const MerchantDashboardPage = () => {
     return null;
   }
 
-  // Mock stats (in real app, fetch from context)
-  const stats = {
-    ordersToday: 24,
-    revenueToday: 580,
-    activeOrders: 3,
-    occupiedTables: 8
-  };
+  const { getOrdersByMerchant, loadOrdersByMerchant } = useOrders();
+  const { stats: tableStats } = useTables(merchantId);
+
+  useEffect(() => {
+    if (merchantId) loadOrdersByMerchant(merchantId);
+  }, [merchantId]);
+
+  const merchantOrders = getOrdersByMerchant(merchantId);
+
+  // Real stats computed from context data
+  const stats = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const todayOrders = merchantOrders.filter(o => o.timestamp?.startsWith(today));
+    const activeStatuses = ['pending', 'confirmed', 'preparing', 'ready'];
+    return {
+      ordersToday: todayOrders.length,
+      revenueToday: todayOrders.reduce((sum, o) => sum + (o.total || 0), 0),
+      activeOrders: merchantOrders.filter(o => activeStatuses.includes(o.status)).length,
+      occupiedTables: tableStats.occupied || 0,
+      totalTables: tableStats.total || 20
+    };
+  }, [merchantOrders, tableStats]);
 
   const menuItems = [
     {
@@ -172,7 +189,7 @@ const MerchantDashboardPage = () => {
               </div>
             </div>
             <h3 className="text-gray-600 text-sm font-medium mb-1">Tavoli Occupati</h3>
-            <p className="text-3xl font-bold text-gray-900">{stats.occupiedTables}/20</p>
+            <p className="text-3xl font-bold text-gray-900">{stats.occupiedTables}/{stats.totalTables}</p>
           </motion.div>
         </div>
 

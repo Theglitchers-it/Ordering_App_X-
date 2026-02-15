@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "db:migrate": "npx sequelize-cli db:migrate",
-    "db:seed": "npx sequelize-cli db:seed:all",
-    "db:reset": "npx sequelize-cli db:drop && npx sequelize-cli db:create && npm run db:migrate && npm run db:seed"
+    "db:init": "node scripts/db-init.js",
+    "db:init:force": "node scripts/db-init.js --force",
+    "db:seed": "node scripts/db-init.js --seed",
+    "db:reset": "node scripts/db-init.js --force --seed",
+    "db:migrate": "npx sequelize-cli db:migrate"
   },
   "keywords": [
     "saas",
