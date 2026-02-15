@@ -116,14 +116,14 @@ async function seedData() {
       business_name: 'Pizzeria Rossi',
       slug: 'pizzeria-rossi',
       description: 'La migliore pizza napoletana di Roma',
-      contact_email: 'rossi@pizzeriarossi.it',
-      contact_phone: '+39 06 1234567',
-      address: 'Via Roma 42',
+      email: 'rossi@pizzeriarossi.it',
+      phone: '+39 06 1234567',
+      address_line1: 'Via Roma 42',
       city: 'Roma',
-      zip_code: '00100',
+      postal_code: '00100',
       country: 'IT',
       status: 'active',
-      subscription_plan: 'business',
+      subscription_plan: 'professional',
       commission_rate: 0.10
     }
   });
@@ -135,14 +135,14 @@ async function seedData() {
       business_name: 'Bar Centrale',
       slug: 'bar-centrale',
       description: 'Cocktail bar nel cuore di Milano',
-      contact_email: 'info@barcentrale.it',
-      contact_phone: '+39 02 9876543',
-      address: 'Piazza Duomo 15',
+      email: 'info@barcentrale.it',
+      phone: '+39 02 9876543',
+      address_line1: 'Piazza Duomo 15',
       city: 'Milano',
-      zip_code: '20100',
+      postal_code: '20100',
       country: 'IT',
       status: 'active',
-      subscription_plan: 'business',
+      subscription_plan: 'professional',
       commission_rate: 0.12
     }
   });
@@ -154,11 +154,11 @@ async function seedData() {
       business_name: 'Trattoria Mario',
       slug: 'trattoria-mario',
       description: 'Cucina tradizionale toscana',
-      contact_email: 'mario@trattoriamario.it',
-      contact_phone: '+39 055 5551234',
-      address: 'Via dei Calzaiuoli 8',
+      email: 'mario@trattoriamario.it',
+      phone: '+39 055 5551234',
+      address_line1: 'Via dei Calzaiuoli 8',
       city: 'Firenze',
-      zip_code: '50100',
+      postal_code: '50100',
       country: 'IT',
       status: 'active',
       subscription_plan: 'starter',
@@ -224,7 +224,7 @@ async function seedData() {
       merchant_id: merchant1.id,
       table_number: i,
       capacity: i <= 10 ? 2 : i <= 15 ? 4 : 6,
-      location: i <= 5 ? 'Interno' : i <= 15 ? 'Terrazza' : 'Sala privata',
+      section: i <= 5 ? 'Interno' : i <= 15 ? 'Terrazza' : 'Sala privata',
       current_status: 'available'
     });
   }
@@ -234,7 +234,7 @@ async function seedData() {
       merchant_id: merchant2.id,
       table_number: i,
       capacity: i <= 8 ? 2 : 4,
-      location: i <= 6 ? 'Interno' : 'Esterno',
+      section: i <= 6 ? 'Interno' : 'Esterno',
       current_status: 'available'
     });
   }
@@ -244,7 +244,7 @@ async function seedData() {
       merchant_id: merchant3.id,
       table_number: i,
       capacity: i <= 8 ? 2 : i <= 12 ? 4 : 6,
-      location: i <= 10 ? 'Sala principale' : 'Giardino',
+      section: i <= 10 ? 'Sala principale' : 'Giardino',
       current_status: 'available'
     });
   }
