@@ -104,7 +104,8 @@ exports.handleWebhook = async (req, res) => {
     switch (event.type) {
       case 'payment_intent.succeeded':
         const paymentIntent = event.data.object;
-        await stripeService.handlePaymentSuccess(paymentIntent);
+        const io = req.app.get('io');
+        await stripeService.handlePaymentSuccess(paymentIntent, io);
         logger.info(`Payment succeeded: ${paymentIntent.id}`);
         break;
 

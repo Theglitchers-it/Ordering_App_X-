@@ -344,7 +344,30 @@ exports.approveMerchant = async (req, res) => {
 
     // Send approval email
     const user = await User.findByPk(merchant.owner_id);
-    // TODO: Send approval email
+    if (user && process.env.ENABLE_EMAIL === 'true') {
+      const emailService = require('../services/email.service');
+      await emailService.sendEmail({
+        to: user.email,
+        subject: `${merchant.business_name} è stato approvato!`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h1 style="color: #22c55e;">Il tuo account è stato approvato!</h1>
+            <p>Ciao ${user.first_name},</p>
+            <p>Siamo lieti di comunicarti che <strong>${merchant.business_name}</strong> è stato approvato su OrderHub.</p>
+            <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h2 style="margin-top: 0;">Ora puoi:</h2>
+              <ol>
+                <li>Configurare il tuo menu con prodotti e categorie</li>
+                <li>Generare i QR code per i tuoi tavoli</li>
+                <li>Iniziare a ricevere ordini dai clienti!</li>
+              </ol>
+            </div>
+            <p>Accedi alla tua dashboard per iniziare.</p>
+          </div>
+        `,
+        text: `Ciao ${user.first_name}, ${merchant.business_name} è stato approvato su OrderHub! Accedi alla dashboard per configurare il menu e iniziare a ricevere ordini.`
+      });
+    }
 
     res.json({
       message: 'Merchant approved successfully',

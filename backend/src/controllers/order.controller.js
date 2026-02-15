@@ -444,7 +444,17 @@ exports.cancelOrder = async (req, res) => {
 
     logger.info(`Order ${order.order_number} cancelled. Reason: ${reason}`);
 
-    // TODO: Process refund if payment was made
+    // Process refund if payment was made via Stripe
+    if (order.payment_status === 'paid' && order.payment_intent_id) {
+      try {
+        const stripeService = require('../services/stripe.service');
+        const refund = await stripeService.createRefund(order.id, null, 'requested_by_customer');
+        logger.info(`Refund processed for order ${order.order_number}: ${refund.refundId}`);
+      } catch (refundError) {
+        logger.error(`Refund failed for order ${order.order_number}:`, refundError);
+        // Order is still cancelled, but refund needs manual processing
+      }
+    }
 
     res.json({
       message: 'Order cancelled successfully',

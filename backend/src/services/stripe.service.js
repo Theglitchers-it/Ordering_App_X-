@@ -75,7 +75,7 @@ const confirmPaymentIntent = async (paymentIntentId) => {
 /**
  * Handle successful payment
  */
-const handlePaymentSuccess = async (paymentIntent) => {
+const handlePaymentSuccess = async (paymentIntent, io = null) => {
   try {
     const orderId = paymentIntent.metadata.order_id;
 
@@ -102,8 +102,23 @@ const handlePaymentSuccess = async (paymentIntent) => {
       await emailService.sendOrderConfirmation(order);
     }
 
-    // Emit WebSocket event
-    // TODO: Implement WebSocket notification
+    // Emit WebSocket notification to merchant and customer
+    if (io && process.env.ENABLE_WEBSOCKET === 'true') {
+      const socketHelper = require('../config/socket');
+      socketHelper.emitToMerchant(io, order.merchant_id, 'payment:success', {
+        order_id: order.id,
+        order_number: order.order_number,
+        amount: order.total,
+        timestamp: new Date()
+      });
+      if (order.customer_id) {
+        socketHelper.emitToUser(io, order.customer_id, 'payment:confirmed', {
+          order_id: order.id,
+          order_number: order.order_number,
+          status: 'paid'
+        });
+      }
+    }
 
     return order;
 
