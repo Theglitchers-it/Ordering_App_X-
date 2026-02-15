@@ -25,6 +25,7 @@ const OrderConfirmationPage = lazy(() => import('./pages/OrderConfirmationPage')
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
 const CouponsPage = lazy(() => import('./pages/CouponsPage'))
 const LoyaltyPage = lazy(() => import('./pages/LoyaltyPage'))
+const ReviewsPage = lazy(() => import('./pages/ReviewsPage'))
 // Admin Pages - New System
 const AdminDashboardNew = lazy(() => import('./pages/admin/AdminDashboardMobile'))
 const AdminOrdersPageNew = lazy(() => import('./pages/admin/AdminOrdersPageNew'))
@@ -59,6 +60,7 @@ import { NotificationsProvider } from './context/NotificationsContext'
 import { TenantProvider } from './context/TenantContext'
 import { MerchantProvider } from './context/MerchantContext'
 import { AuthProvider } from './context/AuthContext'
+import { ReviewsProvider } from './context/ReviewsContext'
 
 function App() {
   return (
@@ -68,6 +70,7 @@ function App() {
       <OrdersProvider>
         <LoyaltyProvider>
           <CouponsProvider>
+           <ReviewsProvider>
             <FavoritesProvider>
               <CartProvider>
                 <TenantProvider>
@@ -124,6 +127,7 @@ function App() {
                       <Route path="/notifications" element={<NotificationsPage />} />
                       <Route path="/coupons" element={<CouponsPage />} />
                       <Route path="/loyalty" element={<LoyaltyPage />} />
+                      <Route path="/reviews" element={<ReviewsPage />} />
                       </Routes>
                     </Suspense>
                       </NotificationsProvider>
@@ -132,6 +136,7 @@ function App() {
                 </TenantProvider>
               </CartProvider>
             </FavoritesProvider>
+           </ReviewsProvider>
           </CouponsProvider>
         </LoyaltyProvider>
       </OrdersProvider>

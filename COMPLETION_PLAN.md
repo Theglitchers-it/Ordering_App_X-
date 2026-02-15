@@ -1,16 +1,17 @@
 # OrderHub SaaS - Piano di Completamento
 
-## Stato Attuale: 92% Completato
+## Stato Attuale: 95% Completato
 
 | Area | Stato | % |
 |------|-------|---|
 | Frontend | Completato | 100% |
 | Backend | Pronto | 95% |
 | Database | Script init + seed pronti | 85% |
-| API Integration | Hybrid Mode Completo | 90% |
+| API Integration | Hybrid Mode Completo | 95% |
 | Pagamenti (Stripe) | Frontend + Backend pronti | 80% |
-| Real-time (Socket.io) | Hook Integrato | 70% |
-| Testing | Non iniziato | 0% |
+| Real-time (Socket.io) | Hook + Notifiche sonore | 80% |
+| Recensioni | Context + Pagina + Route | 100% |
+| Testing | Vitest + 21 test | 30% |
 
 ---
 
@@ -88,21 +89,24 @@ npm run dev
 
 ## FASE 3: Real-time Features (4-6 ore)
 
-### 3.1 Socket.io ✅ (parziale)
+### 3.1 Socket.io ✅
 - [x] Hook useSocket per connessione/disconnessione automatica
 - [x] Supporto join/leave room per merchant
 - [x] Listener per new-order, order-status-update, order-cancelled, payment-confirmed, table-status
 - [x] Integrato in MerchantOrdersPage (auto-refresh su nuovo ordine)
 - [x] Indicatore Live/Offline nell'header ordini
+- [x] Notifica sonora su nuovo ordine (Web Audio API)
 - [ ] Testare con backend Socket.io attivo
-- [ ] Notifica sonora su nuovo ordine
 
 ---
 
 ## FASE 4: Testing (8-10 ore)
 
-### 4.1 Unit Tests
-- [ ] Test Context providers
+### 4.1 Unit Tests ✅ (parziale)
+- [x] Vitest + happy-dom + @testing-library/react configurato
+- [x] CartContext test (8 test) - add, remove, update, clear, total, count
+- [x] usePayment hook test (5 test) - demo mode, createIntent, confirmIntent, reset
+- [x] ReviewsContext test (8 test) - CRUD, stats, filtering, provider check
 - [ ] Test API services
 - [ ] Test utility functions
 - [ ] Coverage > 80%

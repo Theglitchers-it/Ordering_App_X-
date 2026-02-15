@@ -13,15 +13,15 @@
 | **Frontend UI/UX** | **10/10** | `██████████` |
 | **Architettura Multi-Tenant** | **10/10** | `██████████` |
 | **Backend (struttura)** | **9/10** | `█████████░` |
-| **Integrazione API (hybrid)** | **8.5/10** | `████████▌░` |
-| **Real-time (Socket.io)** | **7/10** | `███████░░░` |
+| **Integrazione API (hybrid)** | **9.5/10** | `██████████` |
+| **Real-time (Socket.io)** | **8/10** | `████████░░` |
 | **Pagamenti (Stripe)** | **7/10** | `███████░░░` |
 | **Database (produzione)** | **5/10** | `█████░░░░░` |
-| **Testing** | **1/10** | `█░░░░░░░░░` |
+| **Testing** | **3/10** | `███░░░░░░░` |
 | **Deploy readiness** | **9/10** | `█████████░` |
 | **Documentazione** | **10/10** | `██████████` |
 | | | |
-| **MEDIA TOTALE** | **7.6/10** | `████████░░` |
+| **MEDIA TOTALE** | **7.8/10** | `████████░░` |
 
 ---
 
@@ -90,7 +90,7 @@ Quando `VITE_API_URL` e' configurato, il frontend usa le API; altrimenti usa dat
 | Socket.io | `socketClient` | `useSocket` | Nessuno (graceful) | Fatto |
 | Pagamenti | `paymentService` | `usePayment` | Demo simulato | Fatto |
 | Coupon | `couponService` | `CouponsContext` | `couponsData` | Solo demo |
-| Recensioni | `reviewService` | - | - | Da fare |
+| Recensioni | `reviewService` | `ReviewsContext` | Demo reviews | Fatto |
 
 ---
 
@@ -159,11 +159,11 @@ API HYBRID:   █████████████████░░░   85%
 REAL-TIME:    ██████████████░░░░░░   70%
 PAGAMENTI:    ██████████████░░░░░░   70%
 DATABASE:     ██████████░░░░░░░░░░   50%
-TESTING:      ██░░░░░░░░░░░░░░░░░░   10%
+TESTING:      ██████░░░░░░░░░░░░░░   30%
 DOCS:         ████████████████████  100%
 DEPLOY:       ██████████████████░░   90%
 
-PROGETTO COMPLESSIVO:  ~76%
+PROGETTO COMPLESSIVO:  ~82%
 
 34,200 LOC | 118 files | 37 routes | 0 bugs
 ```

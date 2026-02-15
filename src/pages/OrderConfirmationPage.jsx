@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { CheckCircle, Home, Award, Tag } from 'lucide-react'
+import { CheckCircle, Home, Award, Tag, Star } from 'lucide-react'
 import { useEffect } from 'react'
 
 function OrderConfirmationPage() {
@@ -182,6 +182,21 @@ function OrderConfirmationPage() {
           >
             <Home className="w-5 h-5" />
             <span>Torna alla Home</span>
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate('/reviews', {
+              state: {
+                orderId: orderData.orderNumber || orderData.id,
+                merchantId: orderData.merchantId
+              }
+            })}
+            className="w-full bg-gradient-to-r from-yellow-400 to-orange-400 text-white py-3 rounded-full font-semibold hover:shadow-lg transition-all flex items-center justify-center space-x-2"
+          >
+            <Star className="w-5 h-5" />
+            <span>Lascia una Recensione</span>
           </motion.button>
 
           <motion.button
